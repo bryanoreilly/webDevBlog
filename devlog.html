@@ -20,7 +20,12 @@
 
 <div class="page-layout">
     <main class="article">
+        <p class="eyebrow">Build notes</p>
         <h1>Devlog</h1>
+        <p class="lede">
+            A step-by-step record of building this site from plain files into a home
+            for technical notes, experiments, and browser games.
+        </p>
 
         <section id="devlog-001">
             <h2>Devlog 001: Getting the Tools</h2>
@@ -178,17 +183,18 @@ git push</code></pre>
 
             <h3 id="chapter-template">Step 2: Use a repeatable chapter template</h3>
             <p>Each new chapter should follow this shape:</p>
-            <pre><code>&lt;section id="devlog-004"&gt;
+            <pre><code><strong>  &lt;/&gt;  HTML</strong>
+&lt;section id="devlog-005"&gt;
     &lt;h2&gt;Devlog 004: Chapter title&lt;/h2&gt;
 
     &lt;p&gt;Short summary of what this chapter builds or explains.&lt;/p&gt;
 
-    &lt;h3 id="step-id"&gt;Step 1: First action&lt;/h3&gt;
+    &lt;h3 id="example-step-id"&gt;Step 1: First action&lt;/h3&gt;
     &lt;p&gt;Explain why this step matters.&lt;/p&gt;
 
     &lt;pre&gt;&lt;code&gt;Commands or code go here&lt;/code&gt;&lt;/pre&gt;
 
-    &lt;h3 id="verify-step"&gt;Step 2: Verify the result&lt;/h3&gt;
+    &lt;h3 id="example-verify-step"&gt;Step 2: Verify the result&lt;/h3&gt;
     &lt;p&gt;Explain what the reader should see when it works.&lt;/p&gt;
 &lt;/section&gt;</code></pre>
 
@@ -217,6 +223,575 @@ git status
 git add .
 git commit -m "Add devlog workflow"
 git push</code></pre>
+
+            <h3 id="full-devlog-workflow-file">Step 6: Save the workflow as a reference file</h3>
+            <p>
+                We also keep the workflow in DEVLOG_WORKFLOW.md so the project has a
+                plain text reminder outside the webpage. This is useful because Codex
+                can read it later and follow the same chapter rules.
+            </p>
+            <pre><code><strong> &lt;/&gt;  Markdown</strong>
+# Devlog workflow
+
+This project is both the website and the tutorial for building the website.
+
+When Codex explains or performs a meaningful build step, add a new chapter to
+`devlog.html` so the site documents its own construction.
+
+## Chapter rules
+
+- Use the next number: `Devlog 004`, `Devlog 005`, and so on.
+- Give the section a matching id: `devlog-004`, `devlog-005`.
+- Explain the goal before listing commands or code.
+- Break the chapter into small steps with `h3` headings.
+- Give each `h3` a unique id so the table of contents can link to it.
+- Put commands and code snippets inside `pre` and `code` tags.
+- Include a verification step that tells the reader what to check.
+- Update the table of contents in the aside.
+
+## Suggested chapter shape
+
+```html
+&lt;section id="devlog-004"&gt;
+    &lt;h2&gt;Devlog 004: Chapter title&lt;/h2&gt;
+
+    &lt;p&gt;Short summary of what this chapter builds or explains.&lt;/p&gt;
+
+    &lt;h3 id="step-id"&gt;Step 1: First action&lt;/h3&gt;
+    &lt;p&gt;Explain why this step matters.&lt;/p&gt;
+
+    &lt;pre&gt;&lt;code&gt;Commands or code go here&lt;/code&gt;&lt;/pre&gt;
+
+    &lt;h3 id="verify-step"&gt;Step 2: Verify the result&lt;/h3&gt;
+    &lt;p&gt;Explain what the reader should see when it works.&lt;/p&gt;
+&lt;/section&gt;
+```
+
+## Publishing workflow
+
+```powershell
+git status
+git add .
+git commit -m "Describe the devlog update"
+git push
+```</code></pre>
+        </section>
+
+        <section id="devlog-004">
+            <h2>Devlog 004: Understanding the HTML and CSS foundation</h2>
+
+            <p>
+                In this chapter, we explain the HTML and CSS already used by the site,
+                then improve the blog presentation without adding a framework yet.
+                The goal is to understand the page before we abstract it into Astro,
+                Markdown, MDX, or components later.
+            </p>
+
+            <h3 id="html-document-shell">Step 1: Understand the document shell</h3>
+            <p>
+                Every HTML page starts with a small document structure. The browser
+                reads this structure to understand the page language, character set,
+                viewport size, title, stylesheet, and visible content.
+            </p>
+            <pre><code><strong>  &lt;/&gt;  HTML</strong>
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Devlog | Classic Browser Games&lt;/title&gt;
+    &lt;link rel="stylesheet" href="styles.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    Page content goes here.
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+            <p>
+                The link tag connects the HTML file to styles.css. That keeps the
+                content and presentation separate, which makes the project easier to
+                change as the site grows.
+            </p>
+
+            <h3 id="semantic-html">Step 2: Use semantic HTML</h3>
+            <p>
+                Semantic HTML means choosing tags that describe the role of the
+                content. A header holds site navigation, main holds the primary page
+                content, section groups each devlog chapter, and aside holds related
+                supporting content like the chapter list.
+            </p>
+            <pre><code><strong>  &lt;/&gt;  HTML</strong>
+&lt;header class="site-header"&gt;...&lt;/header&gt;
+&lt;main class="article"&gt;...&lt;/main&gt;
+&lt;section id="example-devlog-chapter"&gt;...&lt;/section&gt;
+&lt;aside class="table-of-contents"&gt;...&lt;/aside&gt;</code></pre>
+            <p>
+                These tags make the page easier to read in the source code and give
+                browsers, search engines, and assistive technology a better outline of
+                the page.
+            </p>
+
+            <h3 id="anchor-links">Step 3: Connect headings with anchor links</h3>
+            <p>
+                The table of contents works because each chapter and step has an id.
+                A link that starts with # jumps to the element with the matching id.
+            </p>
+            <pre><code><strong>  &lt;/&gt;  HTML</strong>
+&lt;h3 id="example-semantic-html"&gt;Step 2: Use semantic HTML&lt;/h3&gt;
+&lt;a href="#semantic-html"&gt;Use semantic HTML&lt;/a&gt;</code></pre>
+            <p>
+                This is why every new devlog chapter needs unique ids. If two elements
+                share the same id, the browser does not know which one you meant.
+            </p>
+
+            <h3 id="css-selectors">Step 4: Style the page with CSS selectors</h3>
+            <p>
+                CSS selectors choose which HTML elements receive a set of visual rules.
+                A class selector starts with a dot, so .article styles any element with
+                class="article".
+            </p>
+            <pre><code><strong>  &lt;/&gt;  css</strong>
+.article {
+    max-width: 760px;
+}
+
+.table-of-contents {
+    position: sticky;
+    top: 24px;
+}</code></pre>
+            <p>
+                CSS lets us change spacing, color, layout, typography, and responsive
+                behavior without rewriting the HTML content.
+            </p>
+
+            <h3 id="layout-and-reading">Step 5: Improve the reading layout</h3>
+            <p>
+                The presentation update gives the devlog a more polished article
+                layout. We added a soft page background, clearer typography, better
+                spacing between chapters, a sticky table of contents, and cleaner code
+                blocks.
+            </p>
+            <pre><code><strong>  &lt;/&gt;  css</strong>
+.page-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 56px;
+}
+
+pre {
+    overflow-x: auto;
+}</code></pre>
+            <p>
+                The grid creates the main article column and the right-side chapter
+                list. The overflow rule keeps long commands readable on smaller
+                screens by allowing horizontal scrolling inside code blocks.
+            </p>
+
+            <h3 id="responsive-css">Step 6: Add responsive behavior</h3>
+            <p>
+                A media query changes the layout when the screen is narrow. On desktop,
+                the article and chapter list sit side by side. On smaller screens, the
+                layout becomes a single column so the text has enough room.
+            </p>
+            <pre><code><strong>  &lt;/&gt;  css</strong>
+@media (max-width: 900px) {
+    .page-layout {
+        display: block;
+    }
+}</code></pre>
+
+            <h3 id="verify-html-css">Step 7: Verify the update</h3>
+            <p>Open devlog.html in the browser and check that:</p>
+            <ul>
+                <li>The page feels like a readable technical article.</li>
+                <li>The chapter list links jump to the correct sections.</li>
+                <li>Code blocks are readable and do not break the layout.</li>
+                <li>The page still works on a narrow screen.</li>
+            </ul>
+        </section>
+
+        <section id="devlog-005">
+            <h2>Devlog 005: Adding copy-ready code snippets</h2>
+
+            <p>
+                In this chapter, we make the devlog more useful for readers by adding
+                larger code snippets they can copy and adapt. Short snippets are good
+                for explaining one idea, but longer snippets help readers see where
+                each piece belongs in the real file.
+            </p>
+
+            <h3 id="copyable-devlog-chapter">Step 1: Show a complete first devlog chapter</h3>
+            <p>
+                This example shows the page shell, the first devlog chapter, and the
+                ordered chapter list. It is enough structure for a reader to start a
+                devlog page and close every major HTML element correctly.
+            </p>
+            <pre><code><strong> &lt;/&gt;  HTML</strong>
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Devlog | Classic Browser Games&lt;/title&gt;
+    &lt;link rel="stylesheet" href="styles.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;header class="site-header"&gt;
+    &lt;h1&gt;Classic Browser Games&lt;/h1&gt;
+
+    &lt;nav&gt;
+        &lt;a href="index.html"&gt;Home&lt;/a&gt;
+        &lt;a href="devlog.html"&gt;Devlog&lt;/a&gt;
+        &lt;a href="projects.html"&gt;Projects&lt;/a&gt;
+    &lt;/nav&gt;
+&lt;/header&gt;
+
+&lt;div class="page-layout"&gt;
+    &lt;main class="article"&gt;
+        &lt;p class="eyebrow"&gt;Build notes&lt;/p&gt;
+        &lt;h1&gt;Devlog&lt;/h1&gt;
+        &lt;p class="lede"&gt;
+            A step-by-step record of building this site from plain files into a home
+            for technical notes, experiments, and browser games.
+        &lt;/p&gt;
+
+        &lt;section id="devlog-001"&gt;
+            &lt;h2&gt;Devlog 001: Getting the Tools&lt;/h2&gt;
+
+            &lt;p&gt;
+                In this chapter, we install the basic tools needed to build this website:
+                Node.js, Visual Studio Code, Git, and GitHub.
+            &lt;/p&gt;
+
+            &lt;h3 id="install-node"&gt;Install Node.js if you dont have it&lt;/h3&gt;
+            &lt;p&gt;Node.js lets us run JavaScript tools from the terminal.&lt;/p&gt;
+            &lt;a href="https://nodejs.org/en/download"&gt;https://nodejs.org/en/download&lt;/a&gt;
+
+            &lt;h3 id="install-vscode"&gt;Install Visual Studio Code&lt;/h3&gt;
+            &lt;p&gt;VS Code is the code editor we will use for this project.&lt;/p&gt;
+            &lt;a href="https://code.visualstudio.com/"&gt;https://code.visualstudio.com/&lt;/a&gt;
+
+            &lt;h3 id="install-git"&gt;Install Git&lt;/h3&gt;
+            &lt;p&gt;Git tracks the history of our project.&lt;/p&gt;
+            &lt;a href="https://git-scm.com/install/"&gt;https://git-scm.com/install/&lt;/a&gt;
+        &lt;/section&gt;
+    &lt;/main&gt;
+
+    &lt;aside class="table-of-contents"&gt;
+        &lt;h2&gt;Chapters&lt;/h2&gt;
+
+        &lt;ol&gt;
+            &lt;li&gt;
+                &lt;a href="#devlog-001"&gt;Getting the Tools&lt;/a&gt;
+                &lt;ol&gt;
+                    &lt;li&gt;&lt;a href="#install-node"&gt;Install Node.js&lt;/a&gt;&lt;/li&gt;
+                    &lt;li&gt;&lt;a href="#install-vscode"&gt;Install VS Code&lt;/a&gt;&lt;/li&gt;
+                    &lt;li&gt;&lt;a href="#install-git"&gt;Install Git&lt;/a&gt;&lt;/li&gt;
+                &lt;/ol&gt;
+            &lt;/li&gt;
+        &lt;/ol&gt;
+    &lt;/aside&gt;
+&lt;/div&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+            <h3 id="copyable-navigation">Step 2: Reuse the same navigation on every page</h3>
+            <p>
+                The projects page currently contains the navigation links. The same
+                nav block should appear on index.html, devlog.html, and projects.html
+                so the reader can move between the three pages from anywhere.
+            </p>
+            <pre><code><strong> &lt;/&gt;  HTML</strong>
+&lt;nav&gt;
+    &lt;a href="index.html"&gt;Home&lt;/a&gt;
+    &lt;a href="devlog.html"&gt;Devlog&lt;/a&gt;
+    &lt;a href="projects.html"&gt;Projects&lt;/a&gt;
+&lt;/nav&gt;</code></pre>
+            <p>
+                Later, when we move to Astro, this repeated navigation will be a good
+                reason to create a reusable layout or component. For now, repetition is
+                acceptable because it keeps the plain HTML easy to understand.
+            </p>
+
+            <h3 id="copyable-stylesheet">Step 3: Copy the full stylesheet</h3>
+            <p>
+                Here is the complete styles.css file at this stage of the project.
+                Keeping the full stylesheet in the devlog lets readers copy the visual
+                foundation before reading the line-by-line explanation.
+            </p>
+            <pre><code><strong> &lt;/&gt;  CSS</strong>
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: #f7f8fb;
+    color: #20242c;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+}
+
+a {
+    color: #2457c5;
+    text-underline-offset: 3px;
+}
+
+a:hover {
+    color: #163a86;
+}
+
+.site-header {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 24px 22px;
+    border-bottom: 1px solid #dfe3ea;
+}
+
+.site-header h1 {
+    margin: 0 0 12px;
+    font-size: 1.35rem;
+    line-height: 1.2;
+}
+
+nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+nav a {
+    border: 1px solid #d8deea;
+    border-radius: 8px;
+    padding: 7px 12px;
+    background: #ffffff;
+    color: #20242c;
+    font-size: 0.95rem;
+    text-decoration: none;
+}
+
+nav a:hover {
+    border-color: #aeb9ce;
+    color: #2457c5;
+}
+
+.page-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 56px;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 24px 72px;
+}
+
+.article {
+    max-width: 780px;
+}
+
+.eyebrow {
+    margin: 0 0 8px;
+    color: #667085;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.article &gt; h1 {
+    margin: 0;
+    color: #111827;
+    font-size: 3rem;
+    line-height: 1.05;
+}
+
+.lede {
+    max-width: 680px;
+    margin: 18px 0 56px;
+    color: #475467;
+    font-size: 1.15rem;
+}
+
+section {
+    margin-bottom: 88px;
+    padding-bottom: 56px;
+    border-bottom: 1px solid #dde3ee;
+}
+
+section:last-child {
+    border-bottom: none;
+}
+
+section h2 {
+    margin: 0 0 18px;
+    color: #101828;
+    font-size: 2rem;
+    line-height: 1.2;
+}
+
+section h3 {
+    margin: 36px 0 10px;
+    color: #182230;
+    font-size: 1.22rem;
+    line-height: 1.3;
+}
+
+p {
+    margin: 0 0 16px;
+}
+
+ul {
+    padding-left: 1.3rem;
+}
+
+li {
+    margin: 6px 0;
+}
+
+pre {
+    margin: 20px 0;
+    border: 1px solid #202938;
+    border-radius: 8px;
+    background: #111827;
+    color: #f5f7fb;
+    padding: 18px 20px;
+    overflow-x: auto;
+    box-shadow: 0 12px 28px rgba(16, 24, 40, 0.14);
+}
+
+code {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.92rem;
+}
+
+p code,
+li code {
+    border: 1px solid #d9e0ec;
+    border-radius: 5px;
+    background: #ffffff;
+    padding: 1px 5px;
+    color: #334155;
+}
+
+.table-of-contents {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    border: 1px solid #dfe3ea;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 18px 18px 20px;
+    box-shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+}
+
+.table-of-contents h2 {
+    margin: 0 0 10px;
+    color: #101828;
+    font-size: 1rem;
+}
+
+.table-of-contents ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.table-of-contents ol ol {
+    margin: 6px 0 14px;
+    padding-left: 16px;
+}
+
+.table-of-contents li {
+    color: #98a2b3;
+    font-size: 0.92rem;
+    line-height: 1.4;
+}
+
+.table-of-contents a {
+    color: #344054;
+    text-decoration: none;
+}
+
+.table-of-contents a:hover {
+    color: #2457c5;
+    text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+    body {
+        font-size: 16px;
+    }
+
+    .page-layout {
+        display: block;
+        padding-top: 34px;
+    }
+
+    .article &gt; h1 {
+        font-size: 2.35rem;
+    }
+
+    .table-of-contents {
+        position: static;
+        margin-top: 32px;
+    }
+}
+
+@media (max-width: 560px) {
+    .site-header,
+    .page-layout {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    section h2 {
+        font-size: 1.65rem;
+    }
+
+    pre {
+        padding: 14px;
+    }
+}</code></pre>
+
+            <h3 id="stylesheet-breakdown">Step 4: Break down what the stylesheet does</h3>
+            <p>
+                The stylesheet starts with broad page rules. The universal selector
+                makes sizing more predictable, html enables smooth anchor scrolling,
+                and body sets the default background, text color, font, and line height.
+            </p>
+            <p>
+                The link and nav rules style plain anchor tags into readable links and
+                button-like navigation. The .site-header rules keep the site title and
+                navigation aligned with the page content.
+            </p>
+            <p>
+                The .page-layout rule creates the two-column article layout. The main
+                column is flexible, and the table of contents has a fixed 280px column.
+                On smaller screens, the media query switches back to a single column.
+            </p>
+            <p>
+                The article, section, h2, h3, p, ul, and li rules control readability.
+                They create spacing between ideas so the page feels like a technical
+                article instead of one long block of text.
+            </p>
+            <p>
+                The pre and code rules make command and code examples readable. The
+                dark background separates snippets from prose, and overflow-x keeps
+                long lines from breaking the page layout.
+            </p>
+
+            <h3 id="verify-copy-ready-snippets">Step 5: Verify the snippets</h3>
+            <p>After adding larger snippets, check that:</p>
+            <ul>
+                <li>The new Devlog 005 link appears in the chapter list.</li>
+                <li>Large code blocks scroll horizontally instead of overflowing the page.</li>
+                <li>The full stylesheet is visible as text, not applied as extra CSS.</li>
+                <li>The page still has no duplicate chapter ids or broken table-of-contents links.</li>
+            </ul>
         </section>
     </main>
 
@@ -256,6 +831,31 @@ git push</code></pre>
                     <li><a href="#codex-devlog-rule">Make Codex part of the workflow</a></li>
                     <li><a href="#chapter-checklist">Check the chapter</a></li>
                     <li><a href="#publish-devlog-changes">Publish changes</a></li>
+                    <li><a href="#full-devlog-workflow-file">Save the workflow file</a></li>
+                </ol>
+            </li>
+
+            <li>
+                <a href="#devlog-004">Understanding the HTML and CSS foundation</a>
+                <ol>
+                    <li><a href="#html-document-shell">Document shell</a></li>
+                    <li><a href="#semantic-html">Semantic HTML</a></li>
+                    <li><a href="#anchor-links">Anchor links</a></li>
+                    <li><a href="#css-selectors">CSS selectors</a></li>
+                    <li><a href="#layout-and-reading">Reading layout</a></li>
+                    <li><a href="#responsive-css">Responsive CSS</a></li>
+                    <li><a href="#verify-html-css">Verify the update</a></li>
+                </ol>
+            </li>
+
+            <li>
+                <a href="#devlog-005">Adding copy-ready code snippets</a>
+                <ol>
+                    <li><a href="#copyable-devlog-chapter">First devlog chapter</a></li>
+                    <li><a href="#copyable-navigation">Navigation on every page</a></li>
+                    <li><a href="#copyable-stylesheet">Full stylesheet</a></li>
+                    <li><a href="#stylesheet-breakdown">Stylesheet breakdown</a></li>
+                    <li><a href="#verify-copy-ready-snippets">Verify snippets</a></li>
                 </ol>
             </li>
         </ol>
