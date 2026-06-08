@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devlog | Classic Browser Games</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+    <h1>Classic Browser Games</h1>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="devlog.html">Devlog</a>
+        <a href="projects.html">Projects</a>
+    </nav>
+</header>
+
+<div class="page-layout">
+    <main class="article">
+        <h1>Devlog</h1>
+
+        <section id="devlog-001">
+            <h2>Devlog 001: Getting the Tools</h2>
+
+            <p>
+                In this chapter, we install the basic tools needed to build this website:
+                Node.js, Visual Studio Code, Git, and GitHub.
+            </p>
+
+            <h3 id="install-node">Install Node.js if you dont have it</h3>
+            <p>Node.js lets us run JavaScript tools from the terminal.</p>
+            <a href="https://nodejs.org/en/download">https://nodejs.org/en/download</a>
+
+            <h3 id="install-vscode">Install Visual Studio Code (or the IDE of your choice)</h3>
+            <p>VS Code is the code editor we will use for this project.</p>
+            <a href="https://code.visualstudio.com/">https://code.visualstudio.com/</a>
+
+            <h3 id="install-git">Install Git</h3>
+            <p>Git tracks the history of our project.</p>
+            <a href="https://git-scm.com/install/">https://git-scm.com/install/</a>
+        </section>
+
+        <section id="devlog-002">
+            <h2>Devlog 002: Setting up the project in Git</h2>
+
+            <p>
+                In this chapter, we create the project folder, add our first files,
+                initialize Git, and push the project to GitHub.
+            </p>
+
+            <h3 id="create-folder">Step 1: Create the project folder</h3>
+
+            <pre><code class="language-powershell"><strong> &lt;/&gt;  Powershell</strong>
+mkdir classic-browser-games
+cd classic-browser-games
+</code></pre>
+
+            <p>Create the files in the new folder.</p>
+            <p>Create:</p>
+
+            <pre><code>classic-browser-games/
+|-- index.html
+|-- devlog.html
+|-- projects.html
+`-- styles.css</code></pre>
+
+            <h3 id="initialize-git">Step 2: Initialize Git</h3>
+            <p>Inside the project folder:</p>
+            <pre><code><strong> &lt;/&gt;  Powershell</strong>
+git init
+</code></pre>
+            <p>This creates the hidden .git folder that tracks your history.</p>
+            <p>Verify:</p>
+            <pre><code><strong> &lt;/&gt;  Powershell</strong>
+git status
+</code></pre>
+            <p>You should see something like:</p>
+            <pre><code>On branch master
+
+No commits yet
+
+Untracked files:
+  index.html
+  devlog.html
+  projects.html
+  styles.css</code></pre>
+
+            <h3 id="create-gitignore">Step 3: Create a .gitignore</h3>
+            <p>Create:</p>
+            <pre><code>.gitignore</code></pre>
+            <p>For this simple project:</p>
+            <pre><code><strong> &lt;/&gt;  gitignore</strong>
+.DS_Store
+Thumbs.db</code></pre>
+            <p>You won't need much yet.</p>
+
+            <h3 id="stage-files">Step 4: Stage files</h3>
+            <pre><code><strong> &lt;/&gt;  Powershell</strong>
+git add .
+</code></pre>
+            <p>Check:</p>
+            <pre><code><strong> &lt;/&gt;  Powershell</strong>
+git status
+</code></pre>
+            <p>You should see:</p>
+            <pre><code>Changes to be committed:
+  new file: index.html
+  new file: devlog.html
+  new file: projects.html
+  new file: styles.css</code></pre>
+
+            <h3 id="first-commit">Step 5: First commit</h3>
+            <pre><code><strong> &lt;/&gt;  Powershell</strong>
+git commit -m "Initial website structure"
+</code></pre>
+            <p>This creates your first snapshot.</p>
+
+            <h3 id="create-github-repo">Step 6: Create GitHub repository</h3>
+            <p>Go to:</p>
+            <a href="https://github.com/new?">GitHub New Repository</a>
+            <p>Repository name:</p>
+            <pre><code>classic-browser-games</code></pre>
+            <p>I'd leave:</p>
+            <pre><code>Public
+README unchecked
+.gitignore unchecked
+License unchecked</code></pre>
+            <p>Since you already have local files and dont want an initial merge conflict.</p>
+            <p>Create repository.</p>
+
+            <h3 id="connect-local-repo-to-github">Step 7: Connect local repo to GitHub</h3>
+            <p>GitHub will show commands similar to:</p>
+            <pre><code><strong> &lt;/&gt;  Powershell</strong>
+git remote add origin https://github.com/YOUR_USERNAME/classic-browser-games.git
+git branch -M main
+git push -u origin main</code></pre>
+            <p>Run them.</p>
+
+            <h3 id="verify">Step 8: Verify</h3>
+            <p>Check:</p>
+            <pre><code><strong> &lt;/&gt;  Powershell</strong>
+git remote -v</code></pre>
+            <p>Should show:</p>
+            <pre><code>origin  https://github.com/yourusername/classic-browser-games.git</code></pre>
+
+            <h3 id="daily-workflow">Daily workflow</h3>
+            <p>After that, your workflow becomes:</p>
+            <pre><code><strong> &lt;/&gt;  Powershell</strong>
+git status
+git add .
+git commit -m "Add homepage navigation"
+git push</code></pre>
+            <p>or</p>
+            <pre><code><strong> &lt;/&gt;  Powershell</strong>
+git add .
+git commit -m "Create first devlog entry"
+git push</code></pre>
+        </section>
+
+        <section id="devlog-003">
+            <h2>Devlog 003: Creating the devlog workflow</h2>
+
+            <p>
+                In this chapter, we set up the rule for the rest of the project:
+                as the site is built, each meaningful lesson or change should become
+                a new devlog chapter that another person could follow later.
+            </p>
+
+            <h3 id="devlog-purpose">Step 1: Decide what the devlog is for</h3>
+            <p>
+                The devlog is not just a change list. It should explain the project
+                like a guided build. Each chapter should show the goal, the files
+                changed, the code or commands used, and how to check that the step worked.
+            </p>
+
+            <h3 id="chapter-template">Step 2: Use a repeatable chapter template</h3>
+            <p>Each new chapter should follow this shape:</p>
+            <pre><code>&lt;section id="devlog-004"&gt;
+    &lt;h2&gt;Devlog 004: Chapter title&lt;/h2&gt;
+
+    &lt;p&gt;Short summary of what this chapter builds or explains.&lt;/p&gt;
+
+    &lt;h3 id="step-id"&gt;Step 1: First action&lt;/h3&gt;
+    &lt;p&gt;Explain why this step matters.&lt;/p&gt;
+
+    &lt;pre&gt;&lt;code&gt;Commands or code go here&lt;/code&gt;&lt;/pre&gt;
+
+    &lt;h3 id="verify-step"&gt;Step 2: Verify the result&lt;/h3&gt;
+    &lt;p&gt;Explain what the reader should see when it works.&lt;/p&gt;
+&lt;/section&gt;</code></pre>
+
+            <h3 id="codex-devlog-rule">Step 3: Make Codex part of the workflow</h3>
+            <p>
+                When Codex explains a build step, the explanation should also be
+                turned into a devlog chapter. The chapter should be added to
+                devlog.html, and the Chapters list on the right should be updated
+                with links to the new section and its steps.
+            </p>
+
+            <h3 id="chapter-checklist">Step 4: Check the chapter before committing</h3>
+            <p>Before pushing a chapter to GitHub, check:</p>
+            <ul>
+                <li>The chapter has a unique section id like devlog-004.</li>
+                <li>Every linked heading has a matching id.</li>
+                <li>Commands are inside pre and code tags.</li>
+                <li>The chapter includes a way to verify the work.</li>
+                <li>The table of contents links to the chapter.</li>
+            </ul>
+
+            <h3 id="publish-devlog-changes">Step 5: Publish the devlog update</h3>
+            <p>After the chapter looks right, save the project history and push it:</p>
+            <pre><code><strong> &lt;/&gt;  Powershell</strong>
+git status
+git add .
+git commit -m "Add devlog workflow"
+git push</code></pre>
+        </section>
+    </main>
+
+    <aside class="table-of-contents">
+        <h2>Chapters</h2>
+
+        <ol>
+            <li>
+                <a href="#devlog-001">Getting the Tools</a>
+                <ol>
+                    <li><a href="#install-node">Install Node.js</a></li>
+                    <li><a href="#install-vscode">Install VS Code</a></li>
+                    <li><a href="#install-git">Install Git</a></li>
+                </ol>
+            </li>
+
+            <li>
+                <a href="#devlog-002">Setting up the project in Git</a>
+                <ol>
+                    <li><a href="#create-folder">Create folder</a></li>
+                    <li><a href="#initialize-git">Initialize Git</a></li>
+                    <li><a href="#create-gitignore">Create a .gitignore</a></li>
+                    <li><a href="#stage-files">Stage files</a></li>
+                    <li><a href="#first-commit">First commit</a></li>
+                    <li><a href="#create-github-repo">Create GitHub repository</a></li>
+                    <li><a href="#connect-local-repo-to-github">Connect local repo to GitHub</a></li>
+                    <li><a href="#verify">Verify</a></li>
+                    <li><a href="#daily-workflow">Daily workflow</a></li>
+                </ol>
+            </li>
+
+            <li>
+                <a href="#devlog-003">Creating the devlog workflow</a>
+                <ol>
+                    <li><a href="#devlog-purpose">Decide the purpose</a></li>
+                    <li><a href="#chapter-template">Use a template</a></li>
+                    <li><a href="#codex-devlog-rule">Make Codex part of the workflow</a></li>
+                    <li><a href="#chapter-checklist">Check the chapter</a></li>
+                    <li><a href="#publish-devlog-changes">Publish changes</a></li>
+                </ol>
+            </li>
+        </ol>
+    </aside>
+</div>
+
+</body>
+</html>
