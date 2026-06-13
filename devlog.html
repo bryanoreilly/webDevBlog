@@ -682,6 +682,10 @@ li code {
     position: sticky;
     top: 24px;
     align-self: start;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     border: 1px solid #dfe3ea;
     border-radius: 8px;
     background: #ffffff;
@@ -737,6 +741,8 @@ li code {
 
     .table-of-contents {
         position: static;
+        max-height: none;
+        overflow: visible;
         margin-top: 32px;
     }
 }
@@ -793,6 +799,99 @@ li code {
                 <li>The page still has no duplicate chapter ids or broken table-of-contents links.</li>
             </ul>
         </section>
+
+        <section id="devlog-006">
+            <h2>Devlog 006: Making the chapter list scroll independently</h2>
+
+            <p>
+                In this chapter, we make the right-side chapter list work more like
+                the table of contents in a long technical blog post. When the mouse is
+                over the article, the page scrolls. When the mouse is over the chapter
+                list, the chapter list can scroll on its own.
+            </p>
+
+            <h3 id="independent-scroll-problem">Step 1: Understand the problem</h3>
+            <p>
+                The table of contents was already sticky, so it stayed visible while
+                reading. But once the list became taller than the browser window, the
+                bottom links were hard to reach. The page had to scroll far enough
+                before the reader could see the rest of the list.
+            </p>
+            <p>
+                Sticky positioning only controls where an element sits on the screen.
+                It does not automatically make that element scrollable. For that, the
+                element needs a height limit and an overflow rule.
+            </p>
+
+            <h3 id="scroll-container-css">Step 2: Turn the table of contents into a scroll container</h3>
+            <p>
+                We update the .table-of-contents rule in styles.css. The important
+                lines are max-height, overflow-y, overscroll-behavior, and
+                scrollbar-gutter.
+            </p>
+            <pre><code><strong> &lt;/&gt;  CSS</strong>
+.table-of-contents {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    border: 1px solid #dfe3ea;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 18px 18px 20px;
+    box-shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+}</code></pre>
+
+            <h3 id="scroll-rule-breakdown">Step 3: Break down the new rules</h3>
+            <p>
+                max-height: calc(100vh - 48px) means the chapter list can be as tall
+                as the browser window minus 48px. That leaves room above and below the
+                sticky panel because top is set to 24px.
+            </p>
+            <p>
+                overflow-y: auto tells the browser to add vertical scrolling only when
+                the content is taller than the available space.
+            </p>
+            <p>
+                overscroll-behavior: contain keeps scroll movement inside the chapter
+                list when possible. This helps the page feel like the article and
+                chapter list are separate reading areas.
+            </p>
+            <p>
+                scrollbar-gutter: stable reserves space for the scrollbar, which helps
+                prevent small layout shifts when the sidebar becomes scrollable.
+            </p>
+
+            <h3 id="mobile-scroll-reset">Step 4: Reset the behavior on small screens</h3>
+            <p>
+                On narrow screens, the layout becomes a single column and the table of
+                contents moves below the article. At that point, it should behave like
+                normal page content instead of a separate scroll panel.
+            </p>
+            <pre><code><strong> &lt;/&gt;  CSS</strong>
+@media (max-width: 900px) {
+    .table-of-contents {
+        position: static;
+        max-height: none;
+        overflow: visible;
+        margin-top: 32px;
+    }
+}</code></pre>
+
+            <h3 id="verify-independent-scroll">Step 5: Verify independent scrolling</h3>
+            <p>Open devlog.html in the browser and check that:</p>
+            <ul>
+                <li>Scrolling over the article moves the main page.</li>
+                <li>Scrolling over the chapter list moves the chapter list.</li>
+                <li>The chapter list stays sticky on wider screens.</li>
+                <li>The chapter list returns to normal flow on narrow screens.</li>
+                <li>No horizontal overflow appears on the page.</li>
+            </ul>
+        </section>
+
     </main>
 
     <aside class="table-of-contents">
@@ -858,6 +957,18 @@ li code {
                     <li><a href="#verify-copy-ready-snippets">Verify snippets</a></li>
                 </ol>
             </li>
+
+            <li>
+                <a href="#devlog-006">Making the chapter list scroll independently</a>
+                <ol>
+                    <li><a href="#independent-scroll-problem">Understand the problem</a></li>
+                    <li><a href="#scroll-container-css">Create a scroll container</a></li>
+                    <li><a href="#scroll-rule-breakdown">Break down the rules</a></li>
+                    <li><a href="#mobile-scroll-reset">Reset on small screens</a></li>
+                    <li><a href="#verify-independent-scroll">Verify scrolling</a></li>
+                </ol>
+            </li>
+
         </ol>
     </aside>
 </div>

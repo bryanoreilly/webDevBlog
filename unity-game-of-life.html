@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity Game of Life | Classic Browser Games</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+    <h1>Classic Browser Games</h1>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="devlog.html">Devlog</a>
+        <a href="projects.html">Projects</a>
+    </nav>
+</header>
+
+<div class="page-layout">
+    <main class="article">
+        <p class="eyebrow">Unity by Code</p>
+        <h1>Conway's Game of Life</h1>
+        <p class="lede">
+            A small Unity coding project that starts with one Gemini prompt, then
+            follows up with a camera fix so the simulation fills the game view.
+        </p>
+
+        <section id="chapter-001">
+            <h2>Chapter 1: Create the simulation script</h2>
+
+            <p>
+                The first prompt was direct: make John Conway's Game of Life in Unity.
+                Gemini returned a C# script that creates a texture, treats each pixel
+                as a cell, randomizes the starting grid, and updates the board with
+                the Game of Life rules.
+            </p>
+            <p>
+                Source conversation:
+                <a href="https://share.google/aimode/LoAtjBlkbJJsB3Lbr">Google AI Mode share link</a>
+            </p>
+
+            <h3 id="chapter-001-setup">Step 1: Set up the Unity object</h3>
+            <p>
+                In a 2D Unity project, create an empty GameObject named
+                <code>Simulation</code>. Then create a C# script named
+                <code>GameOfLife</code> and attach it to that object.
+            </p>
+
+            <h3 id="chapter-001-code">Step 2: Add the first script</h3>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+using UnityEngine;
+
+public class GameOfLife : MonoBehaviour
+{
+    public int width = 100;
+    public int height = 100;
+    public float timeStep = 0.1f;
+
+    private Texture2D texture;
+    private Color[] currentGrid;
+    private Color[] nextGrid;
+    private float timer;
+
+    void Start()
+    {
+        texture = new Texture2D(width, height)
+        {
+            filterMode = FilterMode.Point
+        };
+
+        Sprite sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
+        GameObject go = new GameObject("GridRenderer");
+        go.AddComponent&lt;SpriteRenderer&gt;().sprite = sprite;
+
+        currentGrid = new Color[width * height];
+        nextGrid = new Color[width * height];
+
+        RandomizeGrid();
+    }
+
+    void Update()
+    {
+        timer += Time.deltaTime;
+
+        if (timer &gt;= timeStep)
+        {
+            timer = 0f;
+            CalculateNextGeneration();
+        }
+    }
+
+    void RandomizeGrid()
+    {
+        for (int x = 0; x &lt; width; x++)
+        {
+            for (int y = 0; y &lt; height; y++)
+            {
+                bool isAlive = Random.value &gt; 0.5f;
+                currentGrid[y * width + x] = isAlive ? Color.white : Color.black;
+            }
+        }
+
+        texture.SetPixels(currentGrid);
+        texture.Apply();
+    }
+
+    void CalculateNextGeneration()
+    {
+        for (int x = 0; x &lt; width; x++)
+        {
+            for (int y = 0; y &lt; height; y++)
+            {
+                int aliveNeighbors = CountAliveNeighbors(x, y);
+                int index = y * width + x;
+                bool isAlive = currentGrid[index] == Color.white;
+
+                if (isAlive)
+                {
+                    if (aliveNeighbors &lt; 2 || aliveNeighbors &gt; 3)
+                        nextGrid[index] = Color.black;
+                    else
+                        nextGrid[index] = Color.white;
+                }
+                else
+                {
+                    if (aliveNeighbors == 3)
+                        nextGrid[index] = Color.white;
+                    else
+                        nextGrid[index] = Color.black;
+                }
+            }
+        }
+
+        Color[] temp = currentGrid;
+        currentGrid = nextGrid;
+        nextGrid = temp;
+
+        texture.SetPixels(currentGrid);
+        texture.Apply();
+    }
+
+    int CountAliveNeighbors(int x, int y)
+    {
+        int count = 0;
+
+        for (int i = -1; i &lt;= 1; i++)
+        {
+            for (int j = -1; j &lt;= 1; j++)
+            {
+                if (i == 0 &amp;&amp; j == 0) continue;
+
+                int nx = x + i;
+                int ny = y + j;
+
+                if (nx &lt; 0) nx = width - 1;
+                if (nx &gt;= width) nx = 0;
+                if (ny &lt; 0) ny = height - 1;
+                if (ny &gt;= height) ny = 0;
+
+                int index = ny * width + nx;
+                if (currentGrid[index] == Color.white)
+                {
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+}</code></pre>
+
+            <h3 id="chapter-001-verify">Step 3: Run the scene</h3>
+            <p>
+                Press Play in Unity. The simulation should create a
+                <code>GridRenderer</code> object and show a randomized black-and-white
+                cellular field that evolves over time.
+            </p>
+        </section>
+
+        <section id="chapter-002">
+            <h2>Chapter 2: Fit the camera to the grid</h2>
+
+            <p>
+                The first version worked, but the projected play area appeared too
+                small. The second prompt asked how to sync the play area to the camera.
+                The fix is to create the sprite at one pixel per Unity unit and then
+                size the orthographic camera from the grid dimensions.
+            </p>
+
+            <h3 id="chapter-002-before">Step 1: See the camera problem</h3>
+            <p>
+                The simulation worked, but the grid rendered as a tiny square inside
+                a much larger camera view. That made it hard to see the cells clearly,
+                so the next change fits the camera to the generated sprite.
+            </p>
+            <figure class="screenshot-figure">
+                <img src="unity-game-of-life/2026-06-13 02_03_18-cameraIsNotFixatedYet.png" alt="Unity game view showing the Game of Life grid appearing too small before the camera fix">
+                <figcaption>Before the camera fix, the running simulation is visible but much too small.</figcaption>
+            </figure>
+
+            <h3 id="chapter-002-start">Step 2: Replace the Start method</h3>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+void Start()
+{
+    texture = new Texture2D(width, height)
+    {
+        filterMode = FilterMode.Point
+    };
+
+    Sprite sprite = Sprite.Create(
+        texture,
+        new Rect(0, 0, width, height),
+        new Vector2(0.5f, 0.5f),
+        1f
+    );
+
+    GameObject go = new GameObject("GridRenderer");
+    go.AddComponent&lt;SpriteRenderer&gt;().sprite = sprite;
+
+    currentGrid = new Color[width * height];
+    nextGrid = new Color[width * height];
+
+    RandomizeGrid();
+    FitCameraToGrid();
+}</code></pre>
+
+            <h3 id="chapter-002-fit-camera">Step 3: Add FitCameraToGrid</h3>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+void FitCameraToGrid()
+{
+    Camera mainCam = Camera.main;
+    if (mainCam == null) return;
+
+    mainCam.transform.position = new Vector3(0, 0, -10);
+    mainCam.orthographic = true;
+
+    float screenRatio = (float)Screen.width / Screen.height;
+    float gridRatio = (float)width / height;
+
+    if (screenRatio &gt;= gridRatio)
+    {
+        mainCam.orthographicSize = height / 2f;
+    }
+    else
+    {
+        mainCam.orthographicSize = (width / 2f) / screenRatio;
+    }
+}</code></pre>
+            <p>
+                The important new line is <code>FitCameraToGrid();</code>. It is now
+                enabled as the last line of <code>Start()</code>, after the grid is
+                created and randomized, so the camera can resize itself when the scene
+                begins.
+            </p>
+            <figure class="screenshot-figure">
+                <img src="unity-game-of-life/2026-06-13 02_08_54-FitCameraToGrid_method_implemented.png" alt="Unity editor showing the Game of Life simulation after FitCameraToGrid is enabled in the Start method">
+                <figcaption>With <code>FitCameraToGrid()</code> called from <code>Start()</code>, the camera fit runs automatically when Play starts.</figcaption>
+            </figure>
+
+            <h3 id="chapter-002-verify">Step 4: Verify the camera fix</h3>
+            <p>Run the scene again and check that:</p>
+            <ul>
+                <li>The Main Camera is orthographic.</li>
+                <li>The camera is centered at <code>(0, 0, -10)</code>.</li>
+                <li>The simulation fills the game view instead of sitting as a tiny square.</li>
+                <li>The cell edges stay crisp because the texture uses point filtering.</li>
+            </ul>
+
+            <h3 id="chapter-002-screenshots">Step 5: Capture the camera size setting</h3>
+            <div class="screenshot-gallery">
+                <figure>
+                    <img src="unity-game-of-life/2026-06-13 01_58_20-webDevGameOfLifeMaxScreenByCamera.png" alt="Unity game view showing the Game of Life simulation filling the camera frame">
+                    <figcaption>Game view after fitting the simulation to the camera.</figcaption>
+                </figure>
+
+                <figure>
+                    <div class="screenshot-note">
+                        <p>Changed the Main Camera Projection Size to <code>28.12</code>.</p>
+                        <p>
+                            To fit vertically: set the Camera's Size to exactly half of your
+                            grid's height. For a 100 height grid, set Size = <code>50</code>.
+                        </p>
+                        <p>
+                            To fit horizontally: divide half of your grid's width by your
+                            screen's aspect ratio. For a 100 width grid on a 16:9 screen:
+                            <code>50 / (16 / 9) = 28.12</code>.
+                        </p>
+                    </div>
+                    <img src="unity-game-of-life/2026-06-13 01_53_00-webDevBlog.png" alt="Unity Inspector showing the Main Camera projection size set to 28.12">
+                    <figcaption>Main Camera set to Orthographic with Size 28.12.</figcaption>
+                </figure>
+            </div>
+        </section>
+    </main>
+
+    <aside class="table-of-contents">
+        <h2>Chapters</h2>
+
+        <ol>
+            <li>
+                <a href="#chapter-001">Create the simulation script</a>
+                <ol>
+                    <li><a href="#chapter-001-setup">Set up the object</a></li>
+                    <li><a href="#chapter-001-code">Add the script</a></li>
+                    <li><a href="#chapter-001-verify">Run the scene</a></li>
+                </ol>
+            </li>
+
+            <li>
+                <a href="#chapter-002">Fit the camera to the grid</a>
+                <ol>
+                    <li><a href="#chapter-002-before">See the camera problem</a></li>
+                    <li><a href="#chapter-002-start">Replace Start</a></li>
+                    <li><a href="#chapter-002-fit-camera">Add FitCameraToGrid</a></li>
+                    <li><a href="#chapter-002-verify">Verify the camera fix</a></li>
+                    <li><a href="#chapter-002-screenshots">Camera screenshots</a></li>
+                </ol>
+            </li>
+        </ol>
+    </aside>
+</div>
+
+</body>
+</html>

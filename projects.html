@@ -1,5 +1,49 @@
-<nav>
-    <a href="index.html">Home</a>
-    <a href="devlog.html">Devlog</a>
-    <a href="projects.html">Projects</a>
-</nav>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects | Classic Browser Games</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+    <h1>Classic Browser Games</h1>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="devlog.html">Devlog</a>
+        <a href="projects.html">Projects</a>
+    </nav>
+</header>
+
+<main class="projects-page">
+    <p class="eyebrow">Project index</p>
+    <h1>Projects</h1>
+    <p class="lede">
+        Experiments, games, and build notes grouped by the tools used to make them.
+    </p>
+
+    <section class="project-category" id="unity-by-code">
+        <div class="category-heading">
+            <p class="eyebrow">Unity</p>
+            <h2>Unity by Code</h2>
+        </div>
+
+        <div class="project-grid">
+            <article class="project-card">
+                <p class="project-tag">C# / Cellular automata</p>
+                <h3>Conway's Game of Life</h3>
+                <p>
+                    A Unity simulation generated from a Gemini prompt, then refined so
+                    the camera automatically fits the 100 by 100 cell grid.
+                </p>
+                <a href="unity-game-of-life.html">Open project devlog</a>
+            </article>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>

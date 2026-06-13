@@ -94,6 +94,64 @@ nav a:hover {
     font-size: 1.15rem;
 }
 
+.projects-page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 24px 72px;
+}
+
+.projects-page > h1 {
+    margin: 0;
+    color: #111827;
+    font-size: 3rem;
+    line-height: 1.05;
+}
+
+.project-category {
+    margin-bottom: 64px;
+    padding-bottom: 48px;
+}
+
+.category-heading {
+    margin-bottom: 22px;
+}
+
+.category-heading h2 {
+    margin: 0;
+}
+
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+}
+
+.project-card {
+    border: 1px solid #dfe3ea;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 20px;
+    box-shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+}
+
+.project-card h3 {
+    margin: 0 0 8px;
+    color: #101828;
+    font-size: 1.28rem;
+}
+
+.project-card p {
+    color: #475467;
+}
+
+.project-tag {
+    margin-bottom: 8px;
+    color: #667085;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
 section {
     margin-bottom: 88px;
     padding-bottom: 56px;
@@ -130,6 +188,49 @@ li {
     margin: 6px 0;
 }
 
+.screenshot-note {
+    margin-bottom: 16px;
+    border-left: 4px solid #2457c5;
+    background: #ffffff;
+    padding: 14px 18px;
+}
+
+.screenshot-note p:last-child {
+    margin-bottom: 0;
+}
+
+.screenshot-gallery {
+    display: grid;
+    gap: 22px;
+    margin: 24px 0 0;
+}
+
+.screenshot-figure {
+    margin: 22px 0;
+}
+
+.screenshot-gallery figure {
+    margin: 0;
+}
+
+.screenshot-figure img,
+.screenshot-gallery img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid #202938;
+    border-radius: 8px;
+    background: #20242c;
+}
+
+.screenshot-figure figcaption,
+.screenshot-gallery figcaption {
+    margin-top: 8px;
+    color: #667085;
+    font-size: 0.92rem;
+    line-height: 1.4;
+}
+
 pre {
     margin: 20px 0;
     border: 1px solid #202938;
@@ -159,6 +260,10 @@ li code {
     position: sticky;
     top: 24px;
     align-self: start;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     border: 1px solid #dfe3ea;
     border-radius: 8px;
     background: #ffffff;
@@ -212,8 +317,14 @@ li code {
         font-size: 2.35rem;
     }
 
+    .projects-page > h1 {
+        font-size: 2.35rem;
+    }
+
     .table-of-contents {
         position: static;
+        max-height: none;
+        overflow: visible;
         margin-top: 32px;
     }
 }
