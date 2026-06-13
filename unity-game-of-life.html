@@ -293,6 +293,225 @@ void FitCameraToGrid()
                 </figure>
             </div>
         </section>
+
+        <section id="chapter-003">
+            <h2>Chapter 3: Break down the GameOfLife script</h2>
+
+            <p>
+                The script works because Unity gives us two main entry points:
+                <code>Start()</code> runs once when the scene begins, and
+                <code>Update()</code> runs every frame. The helper methods do the
+                Game of Life work: <code>RandomizeGrid()</code> creates the first
+                board, <code>CalculateNextGeneration()</code> applies the rules, and
+                <code>CountAliveNeighbors()</code> looks around each cell.
+            </p>
+
+            <h3 id="chapter-003-fields">Step 1: Store the simulation state</h3>
+            <p>
+                The script stores the grid as one long array instead of a two-dimensional
+                array. A cell at <code>x</code> and <code>y</code> becomes
+                <code>y * width + x</code>. That formula turns a grid position into an
+                array index.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+public int width = 100;
+public int height = 100;
+public float timeStep = 0.1f;
+
+private Texture2D texture;
+private Color[] currentGrid;
+private Color[] nextGrid;
+private float timer;</code></pre>
+            <p>
+                <code>currentGrid</code> is the board being displayed right now.
+                <code>nextGrid</code> is where the next generation is prepared. Keeping
+                them separate matters because every cell must be calculated from the
+                same old board state.
+            </p>
+
+            <h3 id="chapter-003-start">Step 2: Use Start to build the board once</h3>
+            <p>
+                <code>Start()</code> sets up the texture, creates a sprite to display
+                it, creates the two grid arrays, fills the first grid randomly, and then
+                fits the camera.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+void Start()
+{
+    // Create a texture where each pixel can represent one cell.
+    texture = new Texture2D(width, height)
+    {
+        filterMode = FilterMode.Point
+    };
+
+    // Turn the texture into a visible sprite in the Unity scene.
+    Sprite sprite = Sprite.Create(
+        texture,
+        new Rect(0, 0, width, height),
+        new Vector2(0.5f, 0.5f),
+        1f
+    );
+
+    GameObject go = new GameObject("GridRenderer");
+    go.AddComponent&lt;SpriteRenderer&gt;().sprite = sprite;
+
+    // One array holds the current generation.
+    // The other array is used to build the next generation.
+    currentGrid = new Color[width * height];
+    nextGrid = new Color[width * height];
+
+    RandomizeGrid();
+    FitCameraToGrid();
+}</code></pre>
+
+            <h3 id="chapter-003-update">Step 3: Use Update as the simulation clock</h3>
+            <p>
+                <code>Update()</code> runs every frame, but the simulation should not
+                necessarily advance every frame. The timer lets the script wait until
+                <code>timeStep</code> seconds have passed before calculating the next
+                generation.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+void Update()
+{
+    // Add the time since the previous frame.
+    timer += Time.deltaTime;
+
+    // Only advance the simulation when enough time has passed.
+    if (timer &gt;= timeStep)
+    {
+        timer = 0f;
+        CalculateNextGeneration();
+    }
+}</code></pre>
+
+            <h3 id="chapter-003-randomize">Step 4: RandomizeGrid creates generation zero</h3>
+            <p>
+                <code>RandomizeGrid()</code> visits every grid coordinate and randomly
+                marks the cell alive or dead. Alive cells are white. Dead cells are
+                black. After the array is filled, the colors are pushed into the
+                texture so Unity can draw them.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+void RandomizeGrid()
+{
+    for (int x = 0; x &lt; width; x++)
+    {
+        for (int y = 0; y &lt; height; y++)
+        {
+            // Convert x/y into the matching position in the flat array.
+            int index = y * width + x;
+
+            // Random.value returns a float from 0 to 1.
+            // Greater than 0.5 gives a rough 50/50 starting board.
+            bool isAlive = Random.value &gt; 0.5f;
+            currentGrid[index] = isAlive ? Color.white : Color.black;
+        }
+    }
+
+    texture.SetPixels(currentGrid);
+    texture.Apply();
+}</code></pre>
+
+            <h3 id="chapter-003-calculate">Step 5: CalculateNextGeneration applies the rules</h3>
+            <p>
+                <code>CalculateNextGeneration()</code> loops over every cell, counts
+                its living neighbors, and writes the cell's future state into
+                <code>nextGrid</code>. The key detail is that it reads from
+                <code>currentGrid</code> while writing to <code>nextGrid</code>.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+void CalculateNextGeneration()
+{
+    for (int x = 0; x &lt; width; x++)
+    {
+        for (int y = 0; y &lt; height; y++)
+        {
+            int aliveNeighbors = CountAliveNeighbors(x, y);
+            int index = y * width + x;
+            bool isAlive = currentGrid[index] == Color.white;
+
+            // Living cells survive with 2 or 3 living neighbors.
+            if (isAlive)
+            {
+                nextGrid[index] = aliveNeighbors &lt; 2 || aliveNeighbors &gt; 3
+                    ? Color.black
+                    : Color.white;
+            }
+            // Dead cells become alive with exactly 3 living neighbors.
+            else
+            {
+                nextGrid[index] = aliveNeighbors == 3
+                    ? Color.white
+                    : Color.black;
+            }
+        }
+    }
+
+    // Swap the arrays instead of copying every cell back manually.
+    Color[] temp = currentGrid;
+    currentGrid = nextGrid;
+    nextGrid = temp;
+
+    texture.SetPixels(currentGrid);
+    texture.Apply();
+}</code></pre>
+            <p>
+                The swap is a small but important trick. After the next board is ready,
+                <code>currentGrid</code> and <code>nextGrid</code> trade places. That
+                makes the newly calculated board become the visible current board.
+            </p>
+
+            <h3 id="chapter-003-neighbors">Step 6: CountAliveNeighbors checks the eight surrounding cells</h3>
+            <p>
+                <code>CountAliveNeighbors()</code> looks at a 3 by 3 area around the
+                current cell. It skips the center cell because a cell is not its own
+                neighbor. The edge wrapping makes the grid behave like it loops around
+                at the borders.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+int CountAliveNeighbors(int x, int y)
+{
+    int count = 0;
+
+    for (int i = -1; i &lt;= 1; i++)
+    {
+        for (int j = -1; j &lt;= 1; j++)
+        {
+            // Skip the cell in the middle.
+            if (i == 0 &amp;&amp; j == 0) continue;
+
+            int nx = x + i;
+            int ny = y + j;
+
+            // Wrap around the grid edges.
+            if (nx &lt; 0) nx = width - 1;
+            if (nx &gt;= width) nx = 0;
+            if (ny &lt; 0) ny = height - 1;
+            if (ny &gt;= height) ny = 0;
+
+            int index = ny * width + nx;
+            if (currentGrid[index] == Color.white)
+            {
+                count++;
+            }
+        }
+    }
+
+    return count;
+}</code></pre>
+
+            <h3 id="chapter-003-flow">Step 7: Read the whole loop as a story</h3>
+            <p>The whole script can be read in this order:</p>
+            <ol>
+                <li><code>Start()</code> creates the visual grid and calls <code>RandomizeGrid()</code>.</li>
+                <li><code>RandomizeGrid()</code> creates the first random generation.</li>
+                <li><code>Update()</code> waits until <code>timeStep</code> seconds pass.</li>
+                <li><code>Update()</code> calls <code>CalculateNextGeneration()</code>.</li>
+                <li><code>CalculateNextGeneration()</code> asks <code>CountAliveNeighbors()</code> about every cell.</li>
+                <li>The next grid becomes the current grid and the texture is redrawn.</li>
+            </ol>
+        </section>
     </main>
 
     <aside class="table-of-contents">
@@ -316,6 +535,19 @@ void FitCameraToGrid()
                     <li><a href="#chapter-002-fit-camera">Add FitCameraToGrid</a></li>
                     <li><a href="#chapter-002-verify">Verify the camera fix</a></li>
                     <li><a href="#chapter-002-screenshots">Camera screenshots</a></li>
+                </ol>
+            </li>
+
+            <li>
+                <a href="#chapter-003">Break down the script</a>
+                <ol>
+                    <li><a href="#chapter-003-fields">Store simulation state</a></li>
+                    <li><a href="#chapter-003-start">Start builds the board</a></li>
+                    <li><a href="#chapter-003-update">Update is the clock</a></li>
+                    <li><a href="#chapter-003-randomize">RandomizeGrid</a></li>
+                    <li><a href="#chapter-003-calculate">CalculateNextGeneration</a></li>
+                    <li><a href="#chapter-003-neighbors">CountAliveNeighbors</a></li>
+                    <li><a href="#chapter-003-flow">Whole script flow</a></li>
                 </ol>
             </li>
         </ol>
