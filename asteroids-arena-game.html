@@ -1,0 +1,684 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteroids Arena | Classic Browser Games</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+    <h1>Classic Browser Games</h1>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="devlog.html">Devlog</a>
+        <a href="projects.html">Projects</a>
+    </nav>
+</header>
+
+<div class="page-layout">
+    <main class="article">
+        <p class="eyebrow">Unity by Code</p>
+        <h1>Asteroids Arena</h1>
+        <p class="lede">
+            A first pass at a code-first Unity arcade prototype: one manager script
+            builds the camera, arena, ship, bullets, asteroids, materials, collisions,
+            waves, scoring, lives, and restart flow from simple runtime objects.
+        </p>
+
+        <section id="chapter-001">
+            <h2>Chapter 1: Build the first playable arena</h2>
+
+            <p>
+                The goal was to explore what Unity can do when most of the game is
+                generated from code instead of imported art assets. The previous scene
+                already held a Conway's Game of Life prototype, so this pass preserved
+                that work and created a separate scene named <code>AsteroidsArena</code>.
+            </p>
+
+            <h3 id="chapter-001-scene">Step 1: Create a separate scene</h3>
+            <p>
+                The new scene keeps this arcade experiment isolated from the Game of
+                Life scene. Unity's 2D template supplied the starting camera, and the
+                new script configures that camera at runtime.
+            </p>
+            <pre><code><strong> &lt;/&gt;  Unity setup</strong>
+Scene: Assets/Scenes/AsteroidsArena.unity
+GameObject: Asteroids Arena Game
+Component: AsteroidsArenaGame
+Camera: Main Camera</code></pre>
+
+            <h3 id="chapter-001-script">Step 2: Put the game loop in one script</h3>
+            <p>
+                The first version lives in <code>AsteroidsArenaGame.cs</code>. It is
+                intentionally compact for a prototype: the manager owns the arena state,
+                creates the player ship, creates procedural rocks and bullets, checks
+                collisions, draws the immediate-mode HUD, and advances waves.
+            </p>
+            <p>
+                A snapshot of the script is stored with this devlog at
+                <a href="asteroids-arena-game/AsteroidsArenaGame.cs">asteroids-arena-game/AsteroidsArenaGame.cs</a>.
+            </p>
+
+            <h3 id="chapter-001-procedural">Step 3: Generate placeholder art from code</h3>
+            <p>
+                The ship is a small triangle-like mesh, the thrust flame is another
+                triangle, bullets are tiny discs, and asteroids are irregular polygon
+                meshes. The only primitive GameObjects are the four thin cube boundaries
+                that draw the arena frame.
+            </p>
+
+            <h3 id="chapter-001-smoke-test">Step 4: Smoke test in Play Mode</h3>
+            <p>
+                The first Play Mode smoke test exposed two useful issues: the generated
+                flat meshes were invisible because the triangle winding faced away from
+                the camera, and the tall Game view needed a wider orthographic fit. The
+                fix flipped the generated triangle order and sized the camera from both
+                arena height and arena width.
+            </p>
+            <figure class="screenshot-figure">
+                <img src="asteroids-arena-game/asteroids-arena-playable.png" alt="Unity game view showing the first Asteroids Arena prototype with procedural rocks, ship, arena frame, and HUD">
+                <figcaption>The first playable Asteroids Arena smoke test: procedural rocks, player ship, arena bounds, HUD, and shield text.</figcaption>
+            </figure>
+        </section>
+
+        <section id="chapter-002">
+            <h2>Chapter 2: How the main game script is organized</h2>
+
+            <p>
+                <code>AsteroidsArenaGame</code> is a Unity <code>MonoBehaviour</code>.
+                Public fields expose tuning values in the Inspector, private fields hold
+                runtime state, and three runtime lists track rocks and bullets while the
+                game is running.
+            </p>
+
+            <h3 id="chapter-002-fields">Step 1: Tune the arena, ship, and weapons</h3>
+            <p>
+                The top of the script defines the size of the arena, the starting lives,
+                how many rocks appear in the first wave, the ship acceleration and drag,
+                and the bullet speed, lifetime, and fire cooldown. These values are public
+                so the prototype can be tuned from Unity without changing code.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+[Header("Arena")]
+public float arenaHalfWidth = 12f;
+public float arenaHalfHeight = 7f;
+public int startingLives = 3;
+public int startingRocks = 7;
+
+[Header("Ship")]
+public float shipAcceleration = 16f;
+public float shipTurnSpeed = 220f;
+public float shipMaxSpeed = 8f;
+public float shipDrag = 0.985f;
+
+[Header("Weapons")]
+public float bulletSpeed = 13f;
+public float bulletLifetime = 1.25f;
+public float fireCooldown = 0.16f;</code></pre>
+
+            <h3 id="chapter-002-runtime-state">Step 2: Store runtime state</h3>
+            <p>
+                The script keeps references to generated materials, the ship transform,
+                the thrust flame transform, score, lives, wave number, shield timing,
+                and the current lists of bullets and rocks. This keeps the first pass
+                direct: one object owns the entire prototype loop.
+            </p>
+        </section>
+
+        <section id="chapter-003">
+            <h2>Chapter 3: Method-by-method breakdown</h2>
+
+            <p>
+                This chapter walks through the first pass one method at a time. The
+                script has three layers: setup methods, gameplay methods, and tiny helper
+                behaviours for moving rocks and bullets.
+            </p>
+
+            <h3 id="method-start">Start</h3>
+            <p>
+                <code>Start()</code> runs once when Play Mode begins. It seeds Unity's
+                random number generator, grabs the main camera, configures the camera,
+                creates all runtime materials, draws the arena frame, creates the player
+                ship, and then calls <code>ResetGame()</code> to begin wave one.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+void Start()
+{
+    Random.InitState(System.DateTime.Now.Millisecond);
+    mainCamera = Camera.main;
+    ConfigureCamera();
+    CreateMaterials();
+    CreateArenaFrame();
+    CreateShip();
+    ResetGame();
+}</code></pre>
+
+            <h3 id="method-update">Update</h3>
+            <p>
+                <code>Update()</code> is the frame-by-frame game loop. If the game is
+                over, it only watches for restart input. Otherwise it reads player input,
+                cleans up expired bullets and destroyed rocks, checks bullet impacts,
+                checks ship collisions, and starts the next wave when all rocks are gone.
+            </p>
+
+            <h3 id="method-reset-game">ResetGame</h3>
+            <p>
+                <code>ResetGame()</code> clears old runtime objects, resets score, lives,
+                wave number, and game-over state, respawns the ship at the center, and
+                starts the first wave. This same method is used both for the first run
+                and for restart after game over.
+            </p>
+
+            <h3 id="method-configure-camera">ConfigureCamera</h3>
+            <p>
+                <code>ConfigureCamera()</code> makes sure there is a camera, places it at
+                <code>(0, 0, -10)</code>, switches it to orthographic projection, and sets
+                the background color. The orthographic size uses both arena height and
+                arena width so the frame stays visible even when the Game view is tall.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+float paddedHeight = arenaHalfHeight + 1.2f;
+float paddedWidthAsHeight = (arenaHalfWidth + 1.2f) / Mathf.Max(0.1f, mainCamera.aspect);
+mainCamera.orthographicSize = Mathf.Max(paddedHeight, paddedWidthAsHeight);</code></pre>
+
+            <h3 id="method-create-materials">CreateMaterials</h3>
+            <p>
+                <code>CreateMaterials()</code> builds all colors at runtime: cyan for the
+                ship, amber for the flame, mint for bullets, blue for the arena frame,
+                and a small palette for the rocks. No material assets are required for
+                this first prototype.
+            </p>
+
+            <h3 id="method-make-material">MakeMaterial</h3>
+            <p>
+                <code>MakeMaterial()</code> is a compatibility helper. It tries to use the
+                URP unlit shader first, then falls back to older unlit or sprite shaders.
+                It also checks both <code>_BaseColor</code> and <code>_Color</code> so the
+                same method works across common Unity render setups.
+            </p>
+
+            <h3 id="method-create-arena-frame">CreateArenaFrame</h3>
+            <p>
+                <code>CreateArenaFrame()</code> creates a parent object named
+                <code>Procedural Arena Frame</code> and then adds four boundary lines:
+                top, bottom, left, and right. These boundaries are visual, not physical;
+                gameplay wrapping is handled in code.
+            </p>
+
+            <h3 id="method-create-line">CreateLine</h3>
+            <p>
+                <code>CreateLine()</code> creates one thin cube, positions it, scales it,
+                applies the arena material, and removes its collider. Removing the collider
+                is deliberate because collisions use simple distance checks instead of
+                Unity physics in this version.
+            </p>
+
+            <h3 id="method-create-ship">CreateShip</h3>
+            <p>
+                <code>CreateShip()</code> creates the player GameObject, assigns a
+                generated ship mesh, applies the ship material, and stores the transform.
+                It also creates a child thrust flame mesh and keeps it disabled until the
+                player presses thrust.
+            </p>
+
+            <h3 id="method-create-ship-mesh">CreateShipMesh</h3>
+            <p>
+                <code>CreateShipMesh()</code> returns a small four-vertex mesh shaped like
+                an arcade ship. The triangle order faces the camera, which mattered after
+                the first smoke test showed the flat meshes were being culled.
+            </p>
+
+            <h3 id="method-create-flame-mesh">CreateFlameMesh</h3>
+            <p>
+                <code>CreateFlameMesh()</code> returns a simple triangle used as the ship's
+                exhaust flame. During movement, <code>HandleShipInput()</code> pulses this
+                mesh by scaling it on the local Y axis.
+            </p>
+
+            <h3 id="method-create-rock-mesh">CreateRockMesh</h3>
+            <p>
+                <code>CreateRockMesh()</code> is the most procedural part of the first
+                pass. It picks 9 to 14 points, places them around a circle, and gives each
+                point a random radius wobble. The result is an irregular polygon that
+                reads as an asteroid without importing an image or model.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+float angle = (Mathf.PI * 2f * i) / points;
+float wobble = Random.Range(0.68f, 1.15f);
+vertices[i + 1] = new Vector3(
+    Mathf.Cos(angle) * radius * wobble,
+    Mathf.Sin(angle) * radius * wobble,
+    0f
+);</code></pre>
+
+            <h3 id="method-create-disc-mesh">CreateDiscMesh</h3>
+            <p>
+                <code>CreateDiscMesh()</code> creates a small filled circle from triangle
+                fan geometry. It is used for bullets, so each shot is also generated from
+                code rather than loaded from an asset.
+            </p>
+
+            <h3 id="method-handle-ship-input">HandleShipInput</h3>
+            <p>
+                <code>HandleShipInput()</code> reads keyboard and mouse input. Left and
+                right rotate the ship, up applies acceleration in the ship's facing
+                direction, drag softens the velocity, and the ship wraps around the arena
+                edges. The same method toggles and pulses the flame, then calls
+                <code>FireBullet()</code> when the cooldown allows another shot.
+            </p>
+
+            <h3 id="method-fire-bullet">FireBullet</h3>
+            <p>
+                <code>FireBullet()</code> creates a bullet GameObject at the nose of the
+                ship, assigns a generated disc mesh, and gives it an initial velocity made
+                from bullet speed plus the ship's current velocity. That makes shots feel
+                connected to the ship's motion.
+            </p>
+
+            <h3 id="method-spawn-wave">SpawnWave</h3>
+            <p>
+                <code>SpawnWave()</code> increments the wave number and creates a batch of
+                rocks. Each wave adds one more rock than the last, so the first prototype
+                already has a simple difficulty curve.
+            </p>
+
+            <h3 id="method-random-edge-position">RandomEdgePosition</h3>
+            <p>
+                <code>RandomEdgePosition()</code> chooses either a horizontal or vertical
+                arena edge, then returns a random point along that edge. New rocks enter
+                from the perimeter instead of spawning directly on top of the player.
+            </p>
+
+            <h3 id="method-spawn-rock">SpawnRock</h3>
+            <p>
+                <code>SpawnRock()</code> clamps the rock size, converts size into a radius,
+                creates a GameObject, assigns a procedural rock mesh and random material,
+                then attaches an <code>AsteroidsRock</code> behaviour to move and wrap it.
+            </p>
+
+            <h3 id="method-update-bullets">UpdateBullets</h3>
+            <p>
+                <code>UpdateBullets()</code> removes null references from the bullet list.
+                Bullets destroy themselves when their lifetime ends, so the manager only
+                needs to keep the list tidy before collision checks.
+            </p>
+
+            <h3 id="method-update-rocks">UpdateRocks</h3>
+            <p>
+                <code>UpdateRocks()</code> does the same cleanup for rocks. Destroyed rocks
+                leave null list entries, and this method removes those entries before the
+                next frame's game logic continues.
+            </p>
+
+            <h3 id="method-check-bullet-hits">CheckBulletHits</h3>
+            <p>
+                <code>CheckBulletHits()</code> compares every bullet against every rock
+                using distance checks. If the bullet is close enough to a rock's radius,
+                the bullet is destroyed and <code>BreakRock()</code> handles the asteroid
+                split or removal.
+            </p>
+
+            <h3 id="method-check-ship-hits">CheckShipHits</h3>
+            <p>
+                <code>CheckShipHits()</code> skips collision checks while respawn shields
+                are active. After shields expire, it checks the ship against each rock by
+                distance. A hit calls <code>LoseLife()</code>.
+            </p>
+
+            <h3 id="method-break-rock">BreakRock</h3>
+            <p>
+                <code>BreakRock()</code> removes the hit rock, awards score based on size,
+                and splits medium or large rocks into two smaller rocks. The split rocks
+                inherit a little of the parent velocity plus a new random impulse.
+            </p>
+
+            <h3 id="method-destroy-bullet">DestroyBullet</h3>
+            <p>
+                <code>DestroyBullet()</code> removes a bullet from the manager list and
+                destroys its GameObject. It centralizes bullet cleanup so hit detection
+                does not duplicate that logic.
+            </p>
+
+            <h3 id="method-lose-life">LoseLife</h3>
+            <p>
+                <code>LoseLife()</code> subtracts one life. If no lives remain, the ship is
+                hidden and the game enters the game-over state. Otherwise, the ship is
+                respawned at the center with temporary shields.
+            </p>
+
+            <h3 id="method-respawn-ship">RespawnShip</h3>
+            <p>
+                <code>RespawnShip()</code> reactivates the ship, resets its position,
+                rotation, and velocity, delays firing very briefly, and sets the
+                invulnerability timer. The HUD shows <code>SHIELDS ONLINE</code> while this
+                timer is active.
+            </p>
+
+            <h3 id="method-clear-runtime-objects">ClearRuntimeObjects</h3>
+            <p>
+                <code>ClearRuntimeObjects()</code> destroys all generated bullets and rocks
+                and clears both lists. This prevents old wave objects from surviving when
+                the game restarts.
+            </p>
+
+            <h3 id="method-wrap-transform">WrapTransform</h3>
+            <p>
+                <code>WrapTransform()</code> implements classic Asteroids screen wrapping
+                for the player ship. If the ship crosses the right side, it appears on the
+                left; if it crosses the top, it appears at the bottom.
+            </p>
+
+            <h3 id="method-ongui">OnGUI</h3>
+            <p>
+                <code>OnGUI()</code> draws the prototype HUD: title, score, lives, wave,
+                controls, shield text, and the game-over restart prompt. It is not the
+                final UI system, but it is perfect for quickly proving the game loop.
+            </p>
+        </section>
+
+        <section id="chapter-004">
+            <h2>Chapter 4: Helper behaviours</h2>
+
+            <p>
+                The first pass keeps two helper classes in the same file. They are small
+                movement behaviours that let rocks and bullets update themselves while the
+                main manager handles game rules.
+            </p>
+
+            <h3 id="helper-rock-initialize">AsteroidsRock.Initialize</h3>
+            <p>
+                <code>Initialize()</code> receives the rock size, radius, velocity, spin,
+                and arena dimensions. Those values are private to each generated rock, so
+                every asteroid can drift and rotate differently.
+            </p>
+
+            <h3 id="helper-rock-update">AsteroidsRock.Update</h3>
+            <p>
+                <code>Update()</code> moves the rock by its velocity, rotates it by its
+                spin value, and calls <code>Wrap()</code>. This gives each asteroid motion
+                without a Rigidbody or physics simulation.
+            </p>
+
+            <h3 id="helper-rock-wrap">AsteroidsRock.Wrap</h3>
+            <p>
+                <code>Wrap()</code> gives rocks the same edge-wrapping behaviour as the
+                ship. Rocks that leave one side of the arena re-enter from the opposite
+                side.
+            </p>
+
+            <h3 id="helper-bullet-initialize">AsteroidsBullet.Initialize</h3>
+            <p>
+                <code>Initialize()</code> stores bullet velocity, expiry time, and arena
+                dimensions. The expiry time is calculated from <code>Time.time</code> plus
+                the bullet lifetime, so bullets clean themselves up after a short flight.
+            </p>
+
+            <h3 id="helper-bullet-update">AsteroidsBullet.Update</h3>
+            <p>
+                <code>Update()</code> moves the bullet, wraps it around the arena, and
+                destroys the bullet when its lifetime expires. The manager later removes
+                the null reference from its bullet list.
+            </p>
+
+            <h3 id="helper-bullet-wrap">AsteroidsBullet.Wrap</h3>
+            <p>
+                <code>Wrap()</code> mirrors the wrapping logic used by the ship and rocks.
+                Bullets can cross the screen edge, which keeps the prototype close to the
+                classic Asteroids feel.
+            </p>
+        </section>
+
+        <section id="chapter-005">
+            <h2>Chapter 5: Gameplay behaviour in the first pass</h2>
+
+            <p>
+                The first playable version is small, but it already has a complete arcade
+                loop: the ship turns and drifts, bullets inherit direction and momentum,
+                rocks wrap around the arena, impacts split asteroids, lives can be lost,
+                and new waves begin when the screen is clear.
+            </p>
+
+            <h3 id="chapter-005-bullet-direction">How bullets know which direction to fire</h3>
+            <p>
+                Bullets use the ship's current local up direction. In Unity, a
+                <code>Transform</code> has local direction vectors such as
+                <code>up</code>, <code>right</code>, and <code>forward</code>. Because the
+                ship mesh is drawn pointing up in its own local space, rotating the ship
+                also rotates <code>ship.up</code>. When <code>FireBullet()</code> runs,
+                the bullet is launched along that current facing direction.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+bullet.Initialize(
+    (Vector2)ship.up * bulletSpeed + shipVelocity,
+    bulletLifetime,
+    arenaHalfWidth,
+    arenaHalfHeight
+);</code></pre>
+            <p>
+                The bullet is also spawned slightly ahead of the ship center so it appears
+                to leave from the nose instead of from the middle of the ship.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+bulletObject.transform.position = ship.position + ship.up * 0.68f;</code></pre>
+
+            <h3 id="chapter-005-bullet-path">Whether bullets travel in a straight line</h3>
+            <p>
+                Once fired, a bullet travels in a straight path. The bullet stores one
+                velocity vector during <code>Initialize()</code>, then adds that velocity
+                to its position every frame. There is no steering, gravity, acceleration,
+                or curve on the bullet after it is created.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+transform.position += (Vector3)(velocity * Time.deltaTime);</code></pre>
+            <p>
+                The path is still affected by the ship's movement at the instant of
+                firing. The velocity formula adds <code>shipVelocity</code>, so a shot
+                fired while drifting carries some of the ship's momentum. It is still a
+                straight path, just not always exactly the same as the ship's nose angle
+                if the ship is sliding sideways.
+            </p>
+
+            <h3 id="chapter-005-bullet-despawn">How far bullets go before despawning</h3>
+            <p>
+                Bullets do not despawn by measuring distance. They despawn by time. The
+                public setting <code>bulletLifetime</code> starts at <code>1.25f</code>,
+                and the bullet records its expiry time when it is initialized.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+public float bulletSpeed = 13f;
+public float bulletLifetime = 1.25f;
+
+expiresAt = Time.time + lifetime;</code></pre>
+            <p>
+                Every frame, the bullet checks whether the current game time has reached
+                that expiry time. If so, it destroys itself.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+if (Time.time &gt;= expiresAt)
+{
+    Destroy(gameObject);
+}</code></pre>
+            <p>
+                With the starting values, a bullet travels about
+                <code>13 * 1.25 = 16.25</code> Unity units before timing out, plus or
+                minus the inherited ship velocity. Because bullets wrap at the arena
+                edges while alive, that travel can cross from one side of the arena to
+                the other before the bullet disappears.
+            </p>
+
+            <h3 id="chapter-005-wrapping">Screen wrapping</h3>
+            <p>
+                The ship, rocks, and bullets all use arena wrapping. When an object moves
+                past one edge, its position is moved to the opposite edge. That means the
+                arena behaves like a classic Asteroids screen rather than like a physical
+                box with walls.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+if (p.x &gt; arenaHalfWidth) p.x = -arenaHalfWidth;
+if (p.x &lt; -arenaHalfWidth) p.x = arenaHalfWidth;
+if (p.y &gt; arenaHalfHeight) p.y = -arenaHalfHeight;
+if (p.y &lt; -arenaHalfHeight) p.y = arenaHalfHeight;</code></pre>
+
+            <h3 id="chapter-005-collisions">Collision checks</h3>
+            <p>
+                This first pass does not use Unity physics collisions. Instead, it uses
+                simple distance checks. A bullet hits a rock when the distance between
+                their positions is less than the rock radius plus a small bullet radius.
+                The player is hit when the distance between ship and rock is less than
+                the rock radius plus <code>shipRadius</code>.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+float hitDistance = rock.radius + 0.1f;
+if (Vector2.Distance(bullet.transform.position, rock.transform.position) &lt;= hitDistance)
+{
+    DestroyBullet(bullet);
+    BreakRock(rock);
+}</code></pre>
+
+            <h3 id="chapter-005-rock-splitting">Rock splitting and scoring</h3>
+            <p>
+                Rocks have three sizes. Large and medium rocks split into two smaller
+                rocks when hit. Small rocks disappear. The score reward increases as rocks
+                get smaller, which gives the classic arcade rhythm of breaking big hazards
+                into faster cleanup targets.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+score += rockSize == 3 ? 50 : rockSize == 2 ? 100 : 200;
+
+if (rockSize &gt; 1)
+{
+    SpawnRock(position + Random.insideUnitCircle * 0.25f, rockSize - 1, splitVelocity);
+}</code></pre>
+
+            <h3 id="chapter-005-shields-lives">Respawn shields, lives, and game over</h3>
+            <p>
+                When the player is hit, <code>LoseLife()</code> subtracts one life. If lives
+                remain, <code>RespawnShip()</code> puts the ship back at the center and
+                enables temporary invulnerability. If no lives remain, the ship is hidden
+                and the HUD shows a game-over prompt.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+invulnerableUntil = Time.time + invulnerableSeconds;
+
+if (Time.time &lt; invulnerableUntil) return;</code></pre>
+
+            <h3 id="chapter-005-waves-restart">Waves and restart flow</h3>
+            <p>
+                The game starts wave one from <code>ResetGame()</code>. When the rock list
+                is empty, <code>Update()</code> calls <code>SpawnWave(wave + 1)</code>. Each
+                new wave adds one more starting rock than the previous wave. After game
+                over, pressing <code>Space</code> or <code>Enter</code> calls
+                <code>ResetGame()</code> and starts the loop again.
+            </p>
+        </section>
+
+        <section id="chapter-006">
+            <h2>Chapter 6: What this first pass proves</h2>
+
+            <p>
+                This prototype shows that a small Unity game can be made mostly from
+                code: geometry, colors, movement, collisions, waves, UI, and restart
+                behaviour all appear at runtime. The next interesting steps are better
+                asteroid spawning, particle bursts, audio, smoother UI, enemy ships,
+                pickups, and a more deliberate arena rule set.
+            </p>
+
+            <h3 id="chapter-006-controls">Controls</h3>
+            <ul>
+                <li><code>WASD</code> or arrow keys move and turn the ship.</li>
+                <li><code>Space</code> or mouse button fires.</li>
+                <li><code>Space</code> or <code>Enter</code> restarts after game over.</li>
+            </ul>
+
+            <h3 id="chapter-006-verify">Verification checklist</h3>
+            <ul>
+                <li>The arena frame fills the Game view without cropping.</li>
+                <li>The cyan ship starts in the center with shields online.</li>
+                <li>Procedural rocks drift and wrap around the edges.</li>
+                <li>Bullets split large and medium rocks into smaller rocks.</li>
+                <li>The console is clean during the smoke test.</li>
+            </ul>
+        </section>
+    </main>
+
+    <aside class="table-of-contents">
+        <h2>Chapters</h2>
+
+        <ol>
+            <li>
+                <a href="#chapter-001">Build the first arena</a>
+                <ol>
+                    <li><a href="#chapter-001-scene">Create a scene</a></li>
+                    <li><a href="#chapter-001-script">Add the script</a></li>
+                    <li><a href="#chapter-001-procedural">Generate placeholders</a></li>
+                    <li><a href="#chapter-001-smoke-test">Smoke test</a></li>
+                </ol>
+            </li>
+            <li>
+                <a href="#chapter-002">Script organization</a>
+                <ol>
+                    <li><a href="#chapter-002-fields">Tuning fields</a></li>
+                    <li><a href="#chapter-002-runtime-state">Runtime state</a></li>
+                </ol>
+            </li>
+            <li>
+                <a href="#chapter-003">Method breakdown</a>
+                <ol>
+                    <li><a href="#method-start">Start</a></li>
+                    <li><a href="#method-update">Update</a></li>
+                    <li><a href="#method-reset-game">ResetGame</a></li>
+                    <li><a href="#method-configure-camera">ConfigureCamera</a></li>
+                    <li><a href="#method-create-materials">CreateMaterials</a></li>
+                    <li><a href="#method-create-rock-mesh">CreateRockMesh</a></li>
+                    <li><a href="#method-handle-ship-input">HandleShipInput</a></li>
+                    <li><a href="#method-check-bullet-hits">Collision checks</a></li>
+                    <li><a href="#method-ongui">OnGUI</a></li>
+                </ol>
+            </li>
+            <li>
+                <a href="#chapter-004">Helper behaviours</a>
+                <ol>
+                    <li><a href="#helper-rock-update">AsteroidsRock.Update</a></li>
+                    <li><a href="#helper-bullet-update">AsteroidsBullet.Update</a></li>
+                </ol>
+            </li>
+            <li>
+                <a href="#chapter-005">Gameplay behaviour</a>
+                <ol>
+                    <li><a href="#chapter-005-bullet-direction">Bullet direction</a></li>
+                    <li><a href="#chapter-005-bullet-path">Bullet path</a></li>
+                    <li><a href="#chapter-005-bullet-despawn">Bullet despawn</a></li>
+                    <li><a href="#chapter-005-wrapping">Screen wrapping</a></li>
+                    <li><a href="#chapter-005-collisions">Collisions</a></li>
+                    <li><a href="#chapter-005-rock-splitting">Rock splitting</a></li>
+                    <li><a href="#chapter-005-shields-lives">Shields and lives</a></li>
+                    <li><a href="#chapter-005-waves-restart">Waves and restart</a></li>
+                </ol>
+            </li>
+            <li>
+                <a href="#chapter-006">First-pass result</a>
+                <ol>
+                    <li><a href="#chapter-006-controls">Controls</a></li>
+                    <li><a href="#chapter-006-verify">Verification</a></li>
+                </ol>
+            </li>
+        </ol>
+    </aside>
+</div>
+
+<script>
+    window.Prism = window.Prism || {};
+    window.Prism.manual = true;
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="scripts.js"></script>
+
+</body>
+</html>
+
+

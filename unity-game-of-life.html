@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unity Game of Life | Classic Browser Games</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -512,6 +513,179 @@ int CountAliveNeighbors(int x, int y)
                 <li>The next grid becomes the current grid and the texture is redrawn.</li>
             </ol>
         </section>
+
+        <section id="chapter-004">
+            <h2>Chapter 4: Add grid lines and cell colors</h2>
+
+            <p>
+                The first version used the same data for simulation and rendering:
+                white pixels meant alive, and black pixels meant dead. To make the
+                board easier to read, we split those concerns apart. The simulation now
+                stores alive/dead state as booleans, and a new render method draws that
+                state with larger cells, black grid lines, gray dead cells, and green
+                live cells.
+            </p>
+
+            <h3 id="chapter-004-settings">Step 1: Add visual settings</h3>
+            <p>
+                These public fields make the look of the board adjustable in the Unity
+                Inspector. <code>cellSize</code> controls how many texture pixels each
+                logical cell uses, and <code>gridLineSize</code> controls the black
+                spacing between cells.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+public int cellSize = 8;
+public int gridLineSize = 1;
+public Color aliveColor = new Color(0.2f, 0.9f, 0.25f);
+public Color deadColor = new Color(0.32f, 0.34f, 0.36f);
+public Color gridColor = Color.black;</code></pre>
+
+            <h3 id="chapter-004-state">Step 2: Store cells as true or false</h3>
+            <p>
+                The Game of Life rules only need to know whether a cell is alive.
+                Instead of storing <code>Color.white</code> and <code>Color.black</code>
+                in the grid arrays, the script now stores <code>true</code> for alive
+                and <code>false</code> for dead.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+private bool[] currentGrid;
+private bool[] nextGrid;</code></pre>
+            <p>
+                This makes the simulation logic independent from the visual style. We
+                can change the colors later without changing the Game of Life rules.
+            </p>
+
+            <h3 id="chapter-004-texture-size">Step 3: Build a larger render texture</h3>
+            <p>
+                A one-pixel cell has no room for a visible border. The new texture is
+                bigger than the logical grid because every cell gets its own block of
+                pixels, plus grid-line pixels around it.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+cellSize = Mathf.Max(1, cellSize);
+gridLineSize = Mathf.Max(0, gridLineSize);
+pixelsPerUnit = cellSize + gridLineSize;
+renderWidth = width * cellSize + (width + 1) * gridLineSize;
+renderHeight = height * cellSize + (height + 1) * gridLineSize;
+
+texture = new Texture2D(renderWidth, renderHeight)
+{
+    filterMode = FilterMode.Point
+};</code></pre>
+
+            <h3 id="chapter-004-randomize">Step 4: Randomize the state, then render it</h3>
+            <p>
+                <code>RandomizeGrid()</code> now fills the boolean state array and then
+                calls <code>RenderGrid()</code>. It no longer writes colors directly to
+                the texture.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+void RandomizeGrid()
+{
+    for (int x = 0; x &lt; width; x++)
+    {
+        for (int y = 0; y &lt; height; y++)
+        {
+            bool isAlive = Random.value &gt; 0.5f;
+            currentGrid[y * width + x] = isAlive;
+        }
+    }
+
+    RenderGrid();
+}</code></pre>
+
+            <h3 id="chapter-004-render">Step 5: Draw the styled grid in RenderGrid</h3>
+            <p>
+                <code>RenderGrid()</code> starts by filling the whole texture with
+                <code>gridColor</code>. Then it draws each cell as a colored rectangle.
+                Because the grid-line pixels are left untouched, they stay black.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+void RenderGrid()
+{
+    Color[] pixels = new Color[renderWidth * renderHeight];
+
+    for (int i = 0; i &lt; pixels.Length; i++)
+    {
+        pixels[i] = gridColor;
+    }
+
+    for (int x = 0; x &lt; width; x++)
+    {
+        for (int y = 0; y &lt; height; y++)
+        {
+            int gridIndex = y * width + x;
+            Color cellColor = currentGrid[gridIndex] ? aliveColor : deadColor;
+
+            int startX = gridLineSize + x * (cellSize + gridLineSize);
+            int startY = gridLineSize + y * (cellSize + gridLineSize);
+
+            for (int px = 0; px &lt; cellSize; px++)
+            {
+                for (int py = 0; py &lt; cellSize; py++)
+                {
+                    int textureIndex = (startY + py) * renderWidth + (startX + px);
+                    pixels[textureIndex] = cellColor;
+                }
+            }
+        }
+    }
+
+    texture.SetPixels(pixels);
+    texture.Apply();
+}</code></pre>
+
+            <h3 id="chapter-004-rules">Step 6: Keep the rules the same</h3>
+            <p>
+                The Game of Life rules did not change. The only difference is that
+                the script now writes <code>true</code> or <code>false</code> into
+                <code>nextGrid</code> instead of writing colors.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+bool isAlive = currentGrid[index];
+
+if (isAlive)
+{
+    nextGrid[index] = aliveNeighbors &lt; 2 || aliveNeighbors &gt; 3
+        ? false
+        : true;
+}
+else
+{
+    nextGrid[index] = aliveNeighbors == 3;
+}</code></pre>
+
+            <h3 id="chapter-004-camera">Step 7: Fit the camera to the rendered texture</h3>
+            <p>
+                Since the rendered texture is now larger than the logical grid, the
+                camera uses the rendered world size instead of just <code>width</code>
+                and <code>height</code>.
+            </p>
+            <pre><code><strong> &lt;/&gt;  C#</strong>
+float worldWidth = renderWidth / pixelsPerUnit;
+float worldHeight = renderHeight / pixelsPerUnit;
+float gridRatio = worldWidth / worldHeight;
+
+if (screenRatio &gt;= gridRatio)
+{
+    mainCam.orthographicSize = worldHeight / 2f;
+}
+else
+{
+    mainCam.orthographicSize = (worldWidth / 2f) / screenRatio;
+}</code></pre>
+
+            <h3 id="chapter-004-result">Step 8: Check the styled grid in Unity</h3>
+            <p>
+                After the render pass is separated from the simulation rules, the board
+                is much easier to read: live cells are green, dead cells are gray, and
+                the black grid lines show the boundaries between cells.
+            </p>
+            <figure class="screenshot-figure">
+                <img src="unity-game-of-life/2026-06-13 18_22_34-codeDisplayPlaceHolderGreenGrid.png" alt="Unity game view showing green live cells, gray dead cells, and black grid lines">
+                <figcaption>The styled Game of Life grid running in Unity.</figcaption>
+            </figure>
+        </section>
     </main>
 
     <aside class="table-of-contents">
@@ -550,9 +724,31 @@ int CountAliveNeighbors(int x, int y)
                     <li><a href="#chapter-003-flow">Whole script flow</a></li>
                 </ol>
             </li>
+
+            <li>
+                <a href="#chapter-004">Add grid lines and cell colors</a>
+                <ol>
+                    <li><a href="#chapter-004-settings">Visual settings</a></li>
+                    <li><a href="#chapter-004-state">Boolean cell state</a></li>
+                    <li><a href="#chapter-004-texture-size">Render texture size</a></li>
+                    <li><a href="#chapter-004-randomize">Randomize then render</a></li>
+                    <li><a href="#chapter-004-render">RenderGrid</a></li>
+                    <li><a href="#chapter-004-rules">Keep the rules</a></li>
+                    <li><a href="#chapter-004-camera">Fit the camera</a></li>
+                    <li><a href="#chapter-004-result">Check the result</a></li>
+                </ol>
+            </li>
         </ol>
-    </aside>
+</aside>
 </div>
+
+<script>
+    window.Prism = window.Prism || {};
+    window.Prism.manual = true;
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="scripts.js"></script>
 
 </body>
 </html>

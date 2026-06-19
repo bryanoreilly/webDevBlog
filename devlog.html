@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Devlog | Classic Browser Games</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -892,6 +893,150 @@ li code {
             </ul>
         </section>
 
+        <section id="devlog-007">
+            <h2>Devlog 007: Adding syntax highlighting and copy buttons</h2>
+
+            <p>
+                In this chapter, we improve the code blocks so they feel more like the
+                examples in a polished developer blog. The goal is to make code easier
+                to scan, easier to copy, and easier to understand by language.
+            </p>
+
+            <h3 id="choose-syntax-highlighter">Step 1: Choose a syntax highlighter</h3>
+            <p>
+                We use PrismJS because it works with normal HTML code blocks. Prism
+                expects code to use a language class like language-css,
+                language-markup, or language-javascript.
+            </p>
+            <pre><code><strong> &lt;/&gt;  HTML</strong>
+&lt;pre&gt;&lt;code class="language-css"&gt;
+body {
+    margin: 0;
+}
+&lt;/code&gt;&lt;/pre&gt;</code></pre>
+
+            <h3 id="add-prism-assets">Step 2: Add the Prism theme and scripts</h3>
+            <p>
+                In the head of devlog.html, we add a Prism theme before our own
+                stylesheet. Our stylesheet still loads last, so we can customize the
+                final look.
+            </p>
+            <pre><code><strong> &lt;/&gt;  HTML</strong>
+&lt;link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"&gt;
+&lt;link rel="stylesheet" href="styles.css"&gt;</code></pre>
+            <p>
+                Near the end of the page, we load Prism core, the Prism autoloader,
+                and our own scripts.js file. The autoloader can fetch extra languages
+                when it sees a matching language class.
+            </p>
+            <pre><code><strong> &lt;/&gt;  HTML</strong>
+&lt;script&gt;
+    window.Prism = window.Prism || {};
+    window.Prism.manual = true;
+&lt;/script&gt;
+&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"&gt;&lt;/script&gt;
+&lt;script src="scripts.js"&gt;&lt;/script&gt;</code></pre>
+
+            <h3 id="normalize-existing-code-blocks">Step 3: Normalize the existing code blocks</h3>
+            <p>
+                Earlier code blocks used a visible label inside the code, like HTML or
+                CSS. That label helped humans, but it would also get copied with the
+                code. The script moves that label out of the copied code and uses it
+                to choose the language class.
+            </p>
+            <pre><code><strong> &lt;/&gt;  JavaScript</strong>
+function normalizeCodeBlock(code) {
+    const label = code.querySelector("strong");
+
+    if (!label) {
+        return "";
+    }
+
+    const labelText = label.textContent.replace("&lt;/&gt;", "").trim();
+    label.remove();
+
+    if (code.firstChild &amp;&amp; code.firstChild.nodeType === Node.TEXT_NODE) {
+        code.firstChild.textContent = code.firstChild.textContent.replace(/^\s*\n/, "");
+    }
+
+    return labelText;
+}</code></pre>
+
+            <h3 id="add-copy-buttons">Step 4: Add copy buttons</h3>
+            <p>
+                The copy button reads the code block text and writes it to the
+                clipboard. After copying, the button briefly changes its label so the
+                reader knows the action worked.
+            </p>
+            <pre><code><strong> &lt;/&gt;  JavaScript</strong>
+async function copyText(text) {
+    if (navigator.clipboard &amp;&amp; window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.top = "-999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied = document.execCommand("copy");
+    textarea.remove();
+
+    if (!copied) {
+        throw new Error("Copy command failed");
+    }
+}
+
+function selectCode(code) {
+    const selection = window.getSelection();
+    const range = document.createRange();
+
+    range.selectNodeContents(code);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}</code></pre>
+
+            <h3 id="style-code-buttons">Step 5: Style highlighted code blocks</h3>
+            <p>
+                The code block CSS keeps the dark readable background, leaves room for
+                the language label, and positions the copy button in the top-right
+                corner.
+            </p>
+            <pre><code><strong> &lt;/&gt;  CSS</strong>
+pre {
+    position: relative;
+    padding: 44px 20px 18px;
+}
+
+pre[data-code-language]::before {
+    content: attr(data-code-language);
+    position: absolute;
+    top: 14px;
+    left: 18px;
+}
+
+.copy-code-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}</code></pre>
+
+            <h3 id="verify-syntax-highlighting">Step 6: Verify syntax highlighting</h3>
+            <p>Open devlog.html and check that:</p>
+            <ul>
+                <li>Code blocks show language-aware colors.</li>
+                <li>Code blocks have copy buttons.</li>
+                <li>Copying a block does not include the visual language label.</li>
+                <li>HTML snippets still show escaped tags as text.</li>
+                <li>The page still works if a Prism language takes a moment to load.</li>
+            </ul>
+        </section>
+
     </main>
 
     <aside class="table-of-contents">
@@ -969,9 +1114,29 @@ li code {
                 </ol>
             </li>
 
+            <li>
+                <a href="#devlog-007">Adding syntax highlighting and copy buttons</a>
+                <ol>
+                    <li><a href="#choose-syntax-highlighter">Choose a highlighter</a></li>
+                    <li><a href="#add-prism-assets">Add Prism assets</a></li>
+                    <li><a href="#normalize-existing-code-blocks">Normalize code blocks</a></li>
+                    <li><a href="#add-copy-buttons">Add copy buttons</a></li>
+                    <li><a href="#style-code-buttons">Style code buttons</a></li>
+                    <li><a href="#verify-syntax-highlighting">Verify highlighting</a></li>
+                </ol>
+            </li>
+
         </ol>
-    </aside>
+</aside>
 </div>
+
+<script>
+    window.Prism = window.Prism || {};
+    window.Prism.manual = true;
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+<script src="scripts.js"></script>
 
 </body>
 </html>
